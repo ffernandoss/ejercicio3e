@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "960604732503",
+    "project_id": "eventos3-3b2ea",
+    "storage_bucket": "eventos3-3b2ea.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:960604732503:android:e415d94aacefa8f79eb712",
+        "android_client_info": {
+          "package_name": "com.example.ejercicio3e"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAjDO3fT58eV9WbLhjBu23RgNmBFPzbNao"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
