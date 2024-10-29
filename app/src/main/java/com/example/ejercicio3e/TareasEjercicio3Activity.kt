@@ -8,35 +8,33 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
-import java.util.Calendar
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Delete
+import com.google.firebase.firestore.FirebaseFirestore
 import com.example.ejercicio3e.ui.theme.Ejercicio3eTheme
+import java.util.Calendar
 
 // Clase de datos para representar una tarea
 data class Tarea(
-    val nombre: String,
-    val descripcion: String,
-    val fecha: String,
-    val coste: Double,
-    val prioridad: Boolean,
+    val nombre: String= "",
+    val descripcion: String= "",
+    val fecha: String= "",
+    val coste: Double= 0.0,
+    val prioridad: Boolean= false,
     val hecha: Boolean = false,
     val favorita: Boolean = false
 )
 
 // Actividad principal para gestionar las tareas del ejercicio 3
 class TareasEjercicio3Activity : ComponentActivity() {
+    private val db = FirebaseFirestore.getInstance()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -45,15 +43,32 @@ class TareasEjercicio3Activity : ComponentActivity() {
                     val intent = Intent(this, MostrarTareasActivity::class.java)
                     intent.putStringArrayListExtra("NOMBRES_TAREAS", ArrayList(tareas.map { it.nombre }))
                     startActivity(intent)
+                }, onAddTask = { tarea ->
+                    addTaskToFirestore(tarea)
                 })
             }
         }
+    }
+
+    private fun addTaskToFirestore(tarea: Tarea) {
+        db.collection("tareas")
+            .add(tarea)
+            .addOnSuccessListener {
+                Toast.makeText(this, "Tarea añadida", Toast.LENGTH_SHORT).show()
+            }
+            .addOnFailureListener {
+                Toast.makeText(this, "Error al añadir tarea", Toast.LENGTH_SHORT).show()
+            }
     }
 }
 
 // Función composable para la pantalla de gestión de tareas
 @Composable
-fun TareasEjercicio3Screen(modifier: Modifier = Modifier, onShowTasksClick: (List<Tarea>) -> Unit) {
+fun TareasEjercicio3Screen(
+    modifier: Modifier = Modifier,
+    onShowTasksClick: (List<Tarea>) -> Unit,
+    onAddTask: (Tarea) -> Unit
+) {
     // Variables de estado para los campos de entrada y la lista de tareas
     var nombre by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
@@ -61,7 +76,7 @@ fun TareasEjercicio3Screen(modifier: Modifier = Modifier, onShowTasksClick: (Lis
     var coste by remember { mutableStateOf("") }
     var prioridad by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    val listaTareas = remember { mutableStateOf(loadTareas(context)) }
+    val listaTareas = remember { mutableStateOf(listOf<Tarea>()) }
     var showToast by remember { mutableStateOf(false) }
     var toastMessage by remember { mutableStateOf("") }
 
@@ -158,14 +173,12 @@ fun TareasEjercicio3Screen(modifier: Modifier = Modifier, onShowTasksClick: (Lis
             } else {
                 val nuevaTarea = Tarea(nombre, descripcion, fecha, coste.toDouble(), prioridad)
                 listaTareas.value = listaTareas.value + nuevaTarea
-                saveTareas(context, listaTareas.value)
+                onAddTask(nuevaTarea)
                 nombre = ""
                 descripcion = ""
                 fecha = ""
                 coste = ""
                 prioridad = false
-                toastMessage = "Tarea añadida"
-                showToast = true
             }
         }) {
             Text("Añadir tarea")
@@ -178,30 +191,11 @@ fun TareasEjercicio3Screen(modifier: Modifier = Modifier, onShowTasksClick: (Lis
     }
 }
 
-// Función para guardar la lista de tareas en SharedPreferences
-fun saveTareas(context: android.content.Context, listaTareas: List<Tarea>) {
-    val sharedPreferences = context.getSharedPreferences("TareasPrefs", android.content.Context.MODE_PRIVATE)
-    val editor = sharedPreferences.edit()
-    val gson = Gson()
-    val json = gson.toJson(listaTareas)
-    editor.putString("TareasList", json)
-    editor.apply()
-}
-
-// Función para cargar la lista de tareas desde SharedPreferences
-fun loadTareas(context: android.content.Context): List<Tarea> {
-    val sharedPreferences = context.getSharedPreferences("TareasPrefs", android.content.Context.MODE_PRIVATE)
-    val gson = Gson()
-    val json = sharedPreferences.getString("TareasList", null)
-    val type = object : TypeToken<List<Tarea>>() {}.type
-    return if (json != null) gson.fromJson(json, type) else listOf()
-}
-
 // Función de vista previa para la pantalla de gestión de tareas
 @Preview(showBackground = true)
 @Composable
 fun TareasEjercicio3ScreenPreview() {
     Ejercicio3eTheme() {
-        TareasEjercicio3Screen(onShowTasksClick = {})
+        TareasEjercicio3Screen(onShowTasksClick = {}, onAddTask = {})
     }
 }
